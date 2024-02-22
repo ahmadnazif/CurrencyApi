@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace CurrencyApi.Workers;
 
-public class LatestRateProcessor(ILogger<LatestRateProcessor> logger, IDb db, OpenExchangeRatesApi api, IConfiguration config) : BackgroundService
+public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, OpenExchangeRatesApi api, IConfiguration config) : BackgroundService
 {
-    private readonly ILogger<LatestRateProcessor> logger = logger;
+    private readonly ILogger<LatestRatesProcessor> logger = logger;
     private readonly IDb db = db;
     private readonly OpenExchangeRatesApi api = api;
     private readonly IConfiguration config = config;
@@ -13,12 +13,12 @@ public class LatestRateProcessor(ILogger<LatestRateProcessor> logger, IDb db, Op
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Delay(5000, stoppingToken);
-        logger.LogInformation($"Starting '{nameof(LatestRateProcessor)}' worker..");
+        logger.LogInformation($"Starting '{nameof(LatestRatesProcessor)}' worker..");
 
         var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["LatestRateRefreshDelayMinute"]));
         while (!stoppingToken.IsCancellationRequested)
         {
-            logger.LogInformation($"Executing '{nameof(LatestRateProcessor)}' worker..");
+            logger.LogInformation($"Executing '{nameof(LatestRatesProcessor)}' worker..");
             Stopwatch sw = Stopwatch.StartNew();
             try
             {
