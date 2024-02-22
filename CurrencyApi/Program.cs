@@ -1,23 +1,29 @@
-var builder = WebApplication.CreateBuilder(args);
+global using CurrencyApi.Models;
+using CurrencyApi.Services;
 
-// Add services to the container.
+var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
+
+builder.Services.AddSingleton<IDb, Db>();
+
+builder.Services.AddCors(x => x.AddDefaultPolicy(y => y.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.WebHost.ConfigureKestrel(x =>
+{
+    var httpPort = int.Parse(config["Port"]);
+    x.ListenAnyIP(httpPort);
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
+app.UseCors();
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseAuthorization();
-
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
