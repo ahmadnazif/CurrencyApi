@@ -2,10 +2,11 @@
 using MySql.Data.MySqlClient;
 using System.Reflection;
 using System.Text.Json;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CurrencyApi.Services;
 
-public class Db(ILogger<Db> logger, IConfiguration config):IDb
+public class Db(ILogger<Db> logger, IConfiguration config) : IDb
 {
     private readonly string dbConString = GenerateConnectionString(config);
 
@@ -116,6 +117,48 @@ public class Db(ILogger<Db> logger, IConfiguration config):IDb
         }
     }
     #endregion
+
+    public async Task<PostResponse> InitializeCurrencyTableDataAsync(List<Currency> data, CancellationToken ct)
+    {
+        try
+        {
+            PostResponse resp = new() { IsSuccess = false };
+
+            List<string> row = [];
+
+            foreach (var d in data)
+                row.Add($"('{d.CurrencyCode}', '{d.CountryCode}', '{d.CountryName}')");
+
+            string query =
+                $"INSERT INTO currency (id, country_code, country_name) VALUES " +
+                    $"{string.Join(",", row)} " +
+                    $"ON DUPLICATE KEY UPDATE " +
+                    $"country_code = VALUES(country_code), " +
+                    $"country_name = VALUES(country_name);";
+
+            using (MySqlConnection connection = new(this.dbConString))
+            {
+                await connection.OpenAsync(ct);
+                using MySqlCommand cmd = new(query, connection);
+                await cmd.ExecuteNonQueryAsync(ct);
+                resp = new PostResponse
+                {
+                    IsSuccess = true
+                };
+            }
+
+            return resp;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return new PostResponse
+            {
+                IsSuccess = false,
+                Message = ex.Message
+            };
+        }
+    }
 
     public async Task<List<Currency>> ListAllCurrencyAsync(CancellationToken ct)
     {

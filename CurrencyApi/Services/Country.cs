@@ -11,7 +11,7 @@ public class Country
         if (string.IsNullOrWhiteSpace(countryCode))
             return false;
 
-        var count = meta.ToList().Where(d => d.Iso.ToLower() == countryCode.ToLower()).Count();
+        var count = meta.ToList().Where(d => d.Iso.Equals(countryCode, StringComparison.CurrentCultureIgnoreCase)).Count();
         return count > 0;
     }
 
@@ -22,7 +22,7 @@ public class Country
         if (string.IsNullOrWhiteSpace(countryCode))
             return null;
 
-        var data = meta.Where(d => d.Iso.ToLower() == countryCode.ToLower()).SingleOrDefault();
+        var data = meta.Where(d => d.Iso.Equals(countryCode, StringComparison.CurrentCultureIgnoreCase)).SingleOrDefault();
         if (data == null)
             return null;
 
@@ -34,7 +34,7 @@ public class Country
         if (string.IsNullOrWhiteSpace(countryCode))
             return null;
 
-        var data = meta.Where(d => d.Iso.ToLower() == countryCode.ToLower()).SingleOrDefault();
+        var data = meta.Where(d => d.Iso.Equals(countryCode, StringComparison.CurrentCultureIgnoreCase)).SingleOrDefault();
         if (data == null)
             return null;
 
@@ -44,19 +44,19 @@ public class Country
     public List<IState> ListAllStates(string? countryCode)
     {
         if (string.IsNullOrWhiteSpace(countryCode))
-            return new();
+            return [];
 
-        var data = meta.Where(d => d.Iso.ToLower() == countryCode.ToLower()).SingleOrDefault();
+        var data = meta.Where(d => d.Iso.Equals(countryCode, StringComparison.CurrentCultureIgnoreCase)).SingleOrDefault();
         if (data == null)
-            return new();
+            return [];
 
         try
         {
-            return CountryLoader.LoadLocationData(countryCode).States.ToList();
+            return [.. CountryLoader.LoadLocationData(countryCode).States];
         }
         catch (Exception)
         {
-            return new();
+            return [];
         }
     }
 }
