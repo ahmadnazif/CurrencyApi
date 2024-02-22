@@ -118,6 +118,33 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
     }
     #endregion
 
+    public async Task<int> CountAllCurrencyAsync(CancellationToken ct)
+    {
+        try
+        {
+            int total = 0;
+            string sql = $"SELECT COUNT(*) FROM currency;";
+
+            using (MySqlConnection connection = new(this.dbConString))
+            {
+                await connection.OpenAsync(ct);
+                using MySqlCommand cmd = new(sql, connection);
+                using var reader = await cmd.ExecuteReaderAsync(ct);
+                while (await reader.ReadAsync(ct))
+                {
+                    total = GetIntValue(reader[0]).Value;
+                }
+            }
+
+            return total;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return 0;
+        }
+    }
+
     public async Task<PostResponse> InitializeCurrencyTableDataAsync(List<Currency> data, CancellationToken ct)
     {
         try
