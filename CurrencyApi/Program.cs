@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 builder.Services.AddSingleton<IDb, Db>();
-builder.Services.AddSingleton<Country>();
+builder.Services.AddSingleton<CountryService>();
 
 builder.Services.AddCors(x => x.AddDefaultPolicy(y => y.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 

@@ -2,7 +2,7 @@
 
 namespace CurrencyApi.Services;
 
-public class Country
+public class CountryService
 {
     private readonly IReadOnlyList<ICountryInfo> meta = CountryLoader.CountryInfo;
 

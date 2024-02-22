@@ -2,7 +2,7 @@
 
 namespace CurrencyApi.Workers;
 
-public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, IDb db, Country country) : BackgroundService
+public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, IDb db, CountryService country) : BackgroundService
 {
     private readonly ILogger<CurrencyTableInitializer> logger = logger;
     private readonly IDb db = db;
