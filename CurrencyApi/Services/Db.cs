@@ -154,14 +154,15 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
             List<string> row = [];
 
             foreach (var d in data)
-                row.Add($"('{d.CurrencyCode}', '{d.CountryCode}', '{d.CountryName}')");
+                row.Add($"('{d.CurrencyCode}', '{d.CountryCode}', '{d.CountryName}', '{d.CurrencyName.Replace("\'", string.Empty)}')");
 
             string query =
-                $"INSERT INTO currency (id, country_code, country_name) VALUES " +
+                $"INSERT INTO currency (id, country_code, country_name, currency_name) VALUES " +
                     $"{string.Join(",", row)} " +
                     $"ON DUPLICATE KEY UPDATE " +
                     $"country_code = VALUES(country_code), " +
-                    $"country_name = VALUES(country_name);";
+                    $"country_name = VALUES(country_name), " +
+                    $"currency_name = VALUES(currency_name);";
 
             using (MySqlConnection connection = new(this.dbConString))
             {
@@ -206,6 +207,7 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
                         CurrencyCode = GetStringValue(reader["id"]),
                         CountryCode = GetStringValue(reader["country_code"]),
                         CountryName = GetStringValue(reader["country_name"]),
+                        CurrencyName = GetStringValue(reader["currency_name"])
                     });
                 }
             }
@@ -285,4 +287,110 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
         }
     }
 
+    public async Task<PostResponse> RefreshLatestRateAsync(List<CurrencyRateBase> data, CancellationToken ct)
+    {
+        try
+        {
+            PostResponse resp = new() { IsSuccess = false };
+
+            List<string> row = [];
+
+            foreach (var d in data)
+                row.Add($"('{d.CurrencyCode}', '{d.Rate}', '{d.AgainstOne}')");
+
+            string query =
+                $"INSERT INTO latest_rate (currency_code, rate, against_one) VALUES " +
+                    $"{string.Join(",", row)} " +
+                    $"ON DUPLICATE KEY UPDATE " +
+                    $"rate = VALUES(rate), " +
+                    $"against_one = VALUES(against_one);";
+
+            using (MySqlConnection connection = new(this.dbConString))
+            {
+                await connection.OpenAsync(ct);
+                using MySqlCommand cmd = new(query, connection);
+                await cmd.ExecuteNonQueryAsync(ct);
+                resp = new PostResponse
+                {
+                    IsSuccess = true
+                };
+            }
+
+            return resp;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return new PostResponse
+            {
+                IsSuccess = false,
+                Message = ex.Message
+            };
+        }
+    }
+
+
+    public async Task<PostResponse> SaveSettingAsync(SettingId id, string value, CancellationToken ct)
+    {
+        try
+        {
+            PostResponse resp = new() { IsSuccess = false };
+            string query =
+                "INSERT INTO setting (setting_id, setting_value) VALUES " +
+                "(@a, @b)" +
+                "ON DUPLICATE KEY UPDATE " +
+                "setting_value = @b;";
+
+            using (MySqlConnection connection = new(this.dbConString))
+            {
+                await connection.OpenAsync(ct);
+                using MySqlCommand cmd = new(query, connection);
+                cmd.Parameters.AddWithValue("@a", (int)id);
+                cmd.Parameters.AddWithValue("@b", value);
+
+                await cmd.ExecuteNonQueryAsync(ct);
+                resp = new PostResponse
+                {
+                    IsSuccess = true
+                };
+            }
+
+            return resp;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return new PostResponse
+            {
+                IsSuccess = false,
+                Message = ex.Message
+            };
+        }
+    }
+    public async Task<string> GetSettingAsync(SettingId id, CancellationToken ct)
+    {
+        try
+        {
+            string data = null;
+            string sql = $"SELECT * FROM setting WHERE setting_id = '{(int)id}';";
+
+            using (MySqlConnection connection = new(this.dbConString))
+            {
+                await connection.OpenAsync(ct);
+                using MySqlCommand cmd = new(sql, connection);
+                using var reader = await cmd.ExecuteReaderAsync(ct);
+                while (await reader.ReadAsync(ct))
+                {
+                    data = GetStringValue(reader["setting_value"]);
+                }
+            }
+
+            return data;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return null;
+        }
+    }
 }

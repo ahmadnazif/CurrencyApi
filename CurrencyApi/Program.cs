@@ -1,11 +1,20 @@
+global using static CurrencyApi.Constants;
 global using CurrencyApi.Models;
+global using CurrencyApi.Enums;
+global using CurrencyApi.Helpers;
+global using CurrencyApi.Extensions;
 using CurrencyApi.Services;
+using CurrencyApi.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
+builder.Services.AddHostedService<CurrencyTableInitializer>();
+builder.Services.AddHostedService<LatestRateProcessor>();
+
 builder.Services.AddSingleton<IDb, Db>();
 builder.Services.AddSingleton<CountryService>();
+builder.Services.AddHttpClient<OpenExchangeRatesApi>(x => x.BaseAddress = new("https://openexchangerates.org/api/"));
 
 builder.Services.AddCors(x => x.AddDefaultPolicy(y => y.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 

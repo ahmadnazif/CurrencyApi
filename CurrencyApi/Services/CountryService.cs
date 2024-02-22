@@ -17,6 +17,8 @@ public class CountryService
 
     public List<ICountryInfo> ListAllCountry() => meta.ToList();
 
+    public int CountryCount => meta.Count;
+
     public string? GetCountryName(string? countryCode)
     {
         if (string.IsNullOrWhiteSpace(countryCode))
