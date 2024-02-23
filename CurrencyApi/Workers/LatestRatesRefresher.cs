@@ -17,7 +17,7 @@ public class LatestRatesRefresher(ILogger<LatestRatesRefresher> logger, CacheSer
         logger.LogInformation($"Starting '{nameof(LatestRatesRefresher)}' worker..");
 
         logger.LogInformation($"Loading currencies data to cache..");
-        cache.SetCurrenciesData(await db.ListAllCurrencyAsDictionaryAsync(stoppingToken));
+        cache.SetCurrenciesData(await db.ListAllCurrencyAsync(stoppingToken));
 
         var refreshTs = TimeSpan.FromMinutes(int.Parse(config["OpenExchangeRates:LatestRatesRefreshMinute"]));
         logger.LogInformation($"Rates refresh delay set to {refreshTs}");

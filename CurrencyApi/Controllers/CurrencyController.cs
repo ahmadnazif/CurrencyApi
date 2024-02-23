@@ -14,7 +14,7 @@ public class CurrencyController(IDb db, CacheService cache) : ControllerBase
     [HttpGet("list-all-currency")]
     public async Task<ActionResult<Dictionary<string, string>>> ListAllCurrency(CancellationToken ct)
     {
-        return await Task.FromResult(cache.CurrenciesData); //db.ListAllCurrencyAsDictionaryAsync(ct);
+        return await Task.FromResult(cache.CurrenciesData); //db.ListAllCurrencyAsync(ct);
     }
 
     [HttpGet("list-all-latest-rate")]

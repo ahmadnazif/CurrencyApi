@@ -210,7 +210,7 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
         }
     }
 
-    public async Task<Dictionary<string, string>> ListAllCurrencyAsDictionaryAsync(CancellationToken ct)
+    public async Task<Dictionary<string, string>> ListAllCurrencyAsync(CancellationToken ct)
     {
         try
         {
@@ -245,7 +245,6 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
         try
         {
             List<CurrencyRate> data = [];
-            //string sql = $"SELECT * FROM latest_rate;";
             string sql = $"SELECT * FROM latest_rate LEFT JOIN currency ON latest_rate.currency_code = currency.id;";
 
             using (MySqlConnection connection = new(this.dbConString))
@@ -257,11 +256,6 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
                 {
                     data.Add(new()
                     {
-                        //Currency = new()
-                        //{
-                        //    CurrencyCode = GetStringValue(reader["currency_code"]),
-                        //    CurrencyName = GetStringValue(reader["currency_name"])
-                        //},
                         Currency = new(GetStringValue(reader["currency_code"]), GetStringValue(reader["currency_name"])),
                         Rate = GetDecimalValue(reader["rate"]).Value,
                         AgainstOne = GetStringValue(reader["against_one"]),
@@ -284,7 +278,6 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
         try
         {
             CurrencyRate data = null;
-            //string sql = $"SELECT * FROM latest_rate WHERE currency_code = '{currencyCode}';";
             string sql =
                 $"SELECT * FROM latest_rate " +
                 $"LEFT JOIN currency ON latest_rate.currency_code = currency.id " +
@@ -299,11 +292,6 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
                 {
                     data = new()
                     {
-                        //Currency = new()
-                        //{
-                        //    CurrencyCode = currencyCode,
-                        //    CurrencyName = GetStringValue(reader["currency_name"])
-                        //},
                         Currency = new(GetStringValue(reader["currency_code"]), GetStringValue(reader["currency_name"])),
                         Rate = GetDecimalValue(reader["rate"]).Value,
                         AgainstOne = GetStringValue(reader["against_one"]),
