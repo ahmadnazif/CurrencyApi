@@ -15,7 +15,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         await Task.Delay(5000, stoppingToken);
         logger.LogInformation($"Starting '{nameof(LatestRatesProcessor)}' worker..");
 
-        var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["OpenExhangeRates:LatestRatesRefreshMinute"]));
+        var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["OpenExchangeRates:LatestRatesRefreshMinute"]));
         logger.LogInformation($"Rates refresh delay set to {rateRefreshdelay}");
 
         if (rateRefreshdelay.TotalMinutes < 30)
@@ -56,6 +56,10 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
                         sw.Stop();
                         var nextRefreshTime = time.Value.Add(rateRefreshdelay);
                         logger.LogInformation($"Refresh not needed. Next refresh at {nextRefreshTime.ToDbDateTimeString()} [{sw.Elapsed}]");
+
+                        //
+                        //var curr = DateTime.Now.Subtract(rateRefreshdelay);
+                        //rateRefreshdelay = new()
                     }
 
                     await Task.Delay(rateRefreshdelay, stoppingToken);
