@@ -60,8 +60,8 @@ public class CurrencyController(IDb db, CacheService cache) : ControllerBase
         return new CurrencyConversionResponse
         {
             IsSuccess = true,
-            From = f,
-            To = t,
+            FromRate = f,
+            ToRate = t,
             Amount = amount,
             Result = result,
             Message = $"Elapsed {sw.Elapsed}"
