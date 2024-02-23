@@ -15,7 +15,15 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         await Task.Delay(5000, stoppingToken);
         logger.LogInformation($"Starting '{nameof(LatestRatesProcessor)}' worker..");
 
-        var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["LatestRateRefreshDelayMinute"]));
+        var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["LatestRatesRefreshDelayMinute"]));
+        logger.LogInformation($"Rates refresh delay set to {rateRefreshdelay}");
+
+        if (rateRefreshdelay.TotalMinutes < 30)
+        {
+            rateRefreshdelay = new(0, 30, 0);
+            logger.LogInformation($"Rates refresh delay set to {rateRefreshdelay}");
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             logger.LogInformation($"Executing '{nameof(LatestRatesProcessor)}' worker..");
@@ -39,6 +47,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
                     {
                         await ProcessAsync(stoppingToken);
                         sw.Stop();
+
                         var nextRefreshTime = DateTime.Now.Add(rateRefreshdelay);
                         logger.LogInformation($"Done. Next refresh at {nextRefreshTime} [{sw.Elapsed}]");
                     }
@@ -46,7 +55,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
                     {
                         sw.Stop();
                         var nextRefreshTime = time.Value.Add(rateRefreshdelay);
-                        logger.LogInformation($"Refresh not ready. Next refresh at {nextRefreshTime.ToDbDateTimeString()} [{sw.Elapsed}]");
+                        logger.LogInformation($"Refresh not needed. Next refresh at {nextRefreshTime.ToDbDateTimeString()} [{sw.Elapsed}]");
                     }
 
                     await Task.Delay(rateRefreshdelay, stoppingToken);
