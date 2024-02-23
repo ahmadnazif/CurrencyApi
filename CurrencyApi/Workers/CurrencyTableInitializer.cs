@@ -3,11 +3,12 @@ using System.Diagnostics;
 
 namespace CurrencyApi.Workers;
 
-public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, IDb db, CountryService country) : BackgroundService
+public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, IDb db, OpenExchangeRatesApi api, CountryService country) : BackgroundService
 {
     private readonly ILogger<CurrencyTableInitializer> logger = logger;
     private readonly IDb db = db;
     private readonly CountryService country = country;
+    private readonly OpenExchangeRatesApi api = api;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

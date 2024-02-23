@@ -18,6 +18,28 @@ public class OpenExchangeRatesApi
         this.httpClient = httpClient;
     }
 
+
+    public async Task<IReadOnlyDictionary<string, string>> GetCurrenciesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await httpClient.GetAsync($"currencies.json", ct);
+
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<IReadOnlyDictionary<string, string>>(cancellationToken: ct);
+            else
+            {
+                logger.LogError(response.StatusCode.ToString());
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError($"Exception: {ex.Message}");
+            return null;
+        }
+    }
+
     public async Task<OerApiRates> GetLatestRatesAsync(CancellationToken ct = default)
     {
         try

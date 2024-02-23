@@ -115,14 +115,6 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         logger.LogInformation($"Refresh success [{sw.Elapsed}]");
     }
 
-    private async Task Process2Async(CancellationToken ct)
-    {
-        await db.SaveSettingAsync(SettingId.LatestRatesRefreshTime, DateTime.Now.ToDbDateTimeString(), ct);
-    }
-
-    public override Task StopAsync(CancellationToken cancellationToken)
-    {
-        return base.StopAsync(cancellationToken);
-    }
+    public override Task StopAsync(CancellationToken cancellationToken) => base.StopAsync(cancellationToken);
 }
 
