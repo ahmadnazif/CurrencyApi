@@ -31,12 +31,12 @@ public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBa
     }
 
     [HttpGet("list-all-rate-history")]
-    public async Task<ActionResult<List<RateHistory>>> ListAllRateHistory([FromQuery] string date, CancellationToken ct)
+    public async Task<ActionResult<List<CurrencyRateHistory>>> ListAllRateHistory([FromQuery] string date, CancellationToken ct)
     {
         var d = DateOnlyHelper.Parse(date, DateTimeFormat.DbDate);
 
         if (!d.HasValue)
-            return new List<RateHistory>();
+            return new List<CurrencyRateHistory>();
 
         return await db.ListAllRateHistoryAsync(d.Value, ct);
     }

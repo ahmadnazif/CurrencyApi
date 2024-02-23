@@ -1,6 +1,6 @@
 ﻿namespace CurrencyApi.Models;
 
-public class RateHistory
+public class CurrencyRateHistory
 {
     public DateTime Time { get; set; }
     public Dictionary<string, decimal> Rates { get; set; }

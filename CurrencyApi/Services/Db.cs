@@ -357,11 +357,11 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
     #endregion
 
     #region Rates history
-    public async Task<List<RateHistory>> ListAllRateHistoryAsync(DateOnly date, CancellationToken ct)
+    public async Task<List<CurrencyRateHistory>> ListAllRateHistoryAsync(DateOnly date, CancellationToken ct)
     {
         try
         {
-            List<RateHistory> data = [];
+            List<CurrencyRateHistory> data = [];
             string sql = $"SELECT * FROM rate_history WHERE created_time >= '{date.ToDbDateTimeString()}' AND created_time < '{date.AddDays(1).ToDbDateTimeString()}';";
 
             using (MySqlConnection connection = new(this.dbConString))
