@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 builder.Services.AddHostedService<CurrencyTableInitializer>();
-builder.Services.AddHostedService<LatestRatesProcessor>();
+builder.Services.AddHostedService<LatestRatesRefresher>();
 
 builder.Services.AddSingleton<CacheService>();
 builder.Services.AddSingleton<IDb, Db>();

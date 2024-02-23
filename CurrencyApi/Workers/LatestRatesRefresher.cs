@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace CurrencyApi.Workers;
 
-public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, CacheService cache, IDb db, OpenExchangeRatesApi api, IConfiguration config) : BackgroundService
+public class LatestRatesRefresher(ILogger<LatestRatesRefresher> logger, CacheService cache, IDb db, OpenExchangeRatesApi api, IConfiguration config) : BackgroundService
 {
-    private readonly ILogger<LatestRatesProcessor> logger = logger;
+    private readonly ILogger<LatestRatesRefresher> logger = logger;
     private readonly CacheService cache = cache;
     private readonly IDb db = db;
     private readonly OpenExchangeRatesApi api = api;
@@ -14,7 +14,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, CacheSer
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await Task.Delay(3000, stoppingToken);
-        logger.LogInformation($"Starting '{nameof(LatestRatesProcessor)}' worker..");
+        logger.LogInformation($"Starting '{nameof(LatestRatesRefresher)}' worker..");
 
         logger.LogInformation($"Loading currencies data to cache..");
         cache.SetCurrenciesData(await db.ListAllCurrencyAsDictionaryAsync(stoppingToken));
@@ -30,7 +30,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, CacheSer
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            logger.LogInformation($"Executing '{nameof(LatestRatesProcessor)}' worker..");
+            logger.LogInformation($"Executing '{nameof(LatestRatesRefresher)}' worker..");
             Stopwatch sw = Stopwatch.StartNew();
 
             try
