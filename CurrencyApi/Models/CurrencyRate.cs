@@ -7,7 +7,7 @@ public class CurrencyRate : CurrencyRateBase
 
 public class CurrencyRateBase
 {
-    public Currency Currency { get; set; }
+    public KeyValuePair<string, string> Currency { get; set; }
     public decimal Rate { get; set; }
     public string? AgainstOne { get; set; }
 }

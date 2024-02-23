@@ -169,47 +169,6 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
         }
     }
 
-    public async Task<PostResponse> InitializeCurrencyTableDataAsync(List<Currency> data, CancellationToken ct)
-    {
-        try
-        {
-            PostResponse resp = new() { IsSuccess = false };
-
-            List<string> row = [];
-
-            foreach (var d in data)
-                row.Add($"('{d.CurrencyCode}', '{d.CurrencyName.Replace("\'", string.Empty)}')");
-
-            string query =
-                $"INSERT INTO currency (id, currency_name) VALUES " +
-                    $"{string.Join(",", row)} " +
-                    $"ON DUPLICATE KEY UPDATE " +
-                    $"currency_name = VALUES(currency_name);";
-
-            using (MySqlConnection connection = new(this.dbConString))
-            {
-                await connection.OpenAsync(ct);
-                using MySqlCommand cmd = new(query, connection);
-                await cmd.ExecuteNonQueryAsync(ct);
-                resp = new PostResponse
-                {
-                    IsSuccess = true
-                };
-            }
-
-            return resp;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex.Message);
-            return new PostResponse
-            {
-                IsSuccess = false,
-                Message = ex.Message
-            };
-        }
-    }
-
     public async Task<PostResponse> InitializeCurrencyTableDataAsync(Dictionary<string, string> data, CancellationToken ct)
     {
         try
@@ -248,38 +207,6 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
                 IsSuccess = false,
                 Message = ex.Message
             };
-        }
-    }
-
-
-    public async Task<List<Currency>> ListAllCurrencyAsync(CancellationToken ct)
-    {
-        try
-        {
-            List<Currency> data = [];
-            string sql = $"SELECT * FROM currency;";
-
-            using (MySqlConnection connection = new(this.dbConString))
-            {
-                await connection.OpenAsync(ct);
-                using MySqlCommand cmd = new(sql, connection);
-                using var reader = await cmd.ExecuteReaderAsync(ct);
-                while (await reader.ReadAsync(ct))
-                {
-                    data.Add(new()
-                    {
-                        CurrencyCode = GetStringValue(reader["id"]),
-                        CurrencyName = GetStringValue(reader["currency_name"])
-                    });
-                }
-            }
-
-            return data;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex.Message);
-            return [];
         }
     }
 
@@ -330,11 +257,12 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
                 {
                     data.Add(new()
                     {
-                        Currency = new()
-                        {
-                            CurrencyCode = GetStringValue(reader["currency_code"]),
-                            CurrencyName = GetStringValue(reader["currency_name"])
-                        },
+                        //Currency = new()
+                        //{
+                        //    CurrencyCode = GetStringValue(reader["currency_code"]),
+                        //    CurrencyName = GetStringValue(reader["currency_name"])
+                        //},
+                        Currency = new(GetStringValue(reader["currency_code"]), GetStringValue(reader["currency_name"])),
                         Rate = GetDecimalValue(reader["rate"]).Value,
                         AgainstOne = GetStringValue(reader["against_one"]),
                         UpdateTime = GetDateTimeValue(reader["update_time"]).Value,
@@ -371,11 +299,12 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
                 {
                     data = new()
                     {
-                        Currency = new()
-                        {
-                            CurrencyCode = currencyCode,
-                            CurrencyName = GetStringValue(reader["currency_name"])
-                        },
+                        //Currency = new()
+                        //{
+                        //    CurrencyCode = currencyCode,
+                        //    CurrencyName = GetStringValue(reader["currency_name"])
+                        //},
+                        Currency = new(GetStringValue(reader["currency_code"]), GetStringValue(reader["currency_name"])),
                         Rate = GetDecimalValue(reader["rate"]).Value,
                         AgainstOne = GetStringValue(reader["against_one"]),
                         UpdateTime = GetDateTimeValue(reader["update_time"]).Value,
@@ -401,7 +330,7 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
             List<string> row = [];
 
             foreach (var d in data)
-                row.Add($"('{d.Currency.CurrencyCode}', '{d.Rate}', '{d.AgainstOne}')");
+                row.Add($"('{d.Currency.Key}', '{d.Rate}', '{d.AgainstOne}')");
 
             string query =
                 $"INSERT INTO latest_rate (currency_code, rate, against_one) VALUES " +

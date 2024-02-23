@@ -106,11 +106,7 @@ public class LatestRatesRefresher(ILogger<LatestRatesRefresher> logger, CacheSer
         //var timestamp = DateTimeOffset.FromUnixTimeSeconds(raw.Timestamp);
         var rates = raw.Rates.Select(x => new CurrencyRateBase
         {
-            Currency = new()
-            {
-                CurrencyCode = x.Key,
-                CurrencyName = cache.GetCurrencyData(x.Key)
-            },
+            Currency = new(x.Key, cache.GetCurrencyData(x.Key)),
             Rate = x.Value,
             AgainstOne = raw.BaseCurrency
         });
