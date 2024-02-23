@@ -12,6 +12,7 @@ var config = builder.Configuration;
 builder.Services.AddHostedService<CurrencyTableInitializer>();
 builder.Services.AddHostedService<LatestRatesProcessor>();
 
+builder.Services.AddSingleton<CacheService>();
 builder.Services.AddSingleton<IDb, Db>();
 builder.Services.AddSingleton<CountryService>();
 builder.Services.AddHttpClient<OpenExchangeRatesApi>(x => x.BaseAddress = new("https://openexchangerates.org/api/"));

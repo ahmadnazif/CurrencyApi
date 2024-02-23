@@ -3,9 +3,10 @@ using System.Diagnostics;
 
 namespace CurrencyApi.Workers;
 
-public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, OpenExchangeRatesApi api, IConfiguration config) : BackgroundService
+public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, CacheService cache, IDb db, OpenExchangeRatesApi api, IConfiguration config) : BackgroundService
 {
     private readonly ILogger<LatestRatesProcessor> logger = logger;
+    private readonly CacheService cache = cache;
     private readonly IDb db = db;
     private readonly OpenExchangeRatesApi api = api;
     private readonly IConfiguration config = config;
@@ -14,6 +15,9 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
     {
         await Task.Delay(3000, stoppingToken);
         logger.LogInformation($"Starting '{nameof(LatestRatesProcessor)}' worker..");
+
+        logger.LogInformation($"Loading currencies data to cache..");
+        cache.SetCurrenciesData(await db.ListAllCurrencyAsDictionaryAsync(stoppingToken));
 
         var refreshTs = TimeSpan.FromMinutes(int.Parse(config["OpenExchangeRates:LatestRatesRefreshMinute"]));
         logger.LogInformation($"Rates refresh delay set to {refreshTs}");
@@ -34,7 +38,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
                 var latestTimeStr = await db.GetSettingAsync(SettingId.LatestRatesRefreshTime, stoppingToken);
 
                 // First refresh
-                if (string.IsNullOrWhiteSpace(latestTimeStr)) 
+                if (string.IsNullOrWhiteSpace(latestTimeStr))
                 {
                     await ProcessAsync(stoppingToken);
                     sw.Stop();
@@ -66,7 +70,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
                         logger.LogInformation($"Refresh not needed. Next refresh at {nextRefreshTime.ToDbDateTimeString()} in {refreshTs} delay [{sw.Elapsed}]");
 
                         var newRefreshTs = nextRefreshTime.Subtract(DateTime.Now);
-                        logger.LogInformation($"NEW Refresh TS: {newRefreshTs}"); // TODO: delete
+                        logger.LogInformation($"Next refresh will begin in {newRefreshTs}"); // TODO: delete
                         await Task.Delay(newRefreshTs, stoppingToken);
                     }
                 }
@@ -102,7 +106,11 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         //var timestamp = DateTimeOffset.FromUnixTimeSeconds(raw.Timestamp);
         var rates = raw.Rates.Select(x => new CurrencyRateBase
         {
-            CurrencyCode = x.Key,
+            Currency = new()
+            {
+                CurrencyCode = x.Key,
+                CurrencyName = cache.GetCurrencyData(x.Key)
+            },
             Rate = x.Value,
             AgainstOne = raw.BaseCurrency
         });

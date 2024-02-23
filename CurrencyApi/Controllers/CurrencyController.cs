@@ -7,15 +7,14 @@ namespace CurrencyApi.Controllers;
 
 [Route("api/currency")]
 [ApiController]
-public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBase
+public class CurrencyController(IDb db, CacheService cache) : ControllerBase
 {
     private readonly IDb db = db;
-    private readonly OpenExchangeRatesApi api = api;
 
     [HttpGet("list-all-currency")]
-    public async Task<ActionResult<List<Currency>>> ListAllCurrency(CancellationToken ct)
+    public async Task<ActionResult<Dictionary<string, string>>> ListAllCurrency(CancellationToken ct)
     {
-        return await db.ListAllCurrencyAsync(ct);
+        return await Task.FromResult(cache.CurrenciesData); //db.ListAllCurrencyAsDictionaryAsync(ct);
     }
 
     [HttpGet("list-all-latest-rate")]
@@ -50,7 +49,7 @@ public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBa
         var t = await db.GetLatestRateAsync(to, ct);
 
         if (f == null)
-            return new CurrencyConversionResponse { IsSuccess = false, Message = $"No rate data for currency '{from}'"};
+            return new CurrencyConversionResponse { IsSuccess = false, Message = $"No rate data for currency '{from}'" };
 
         if (t == null)
             return new CurrencyConversionResponse { IsSuccess = false, Message = $"No rate data for currency '{to}'" };
@@ -60,12 +59,12 @@ public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBa
 
         return new CurrencyConversionResponse
         {
-             IsSuccess = true,
-             From = f,
-             To = t,
-             Amount = amount,
-             Result = result,
-             Message = $"Elapsed {sw.Elapsed}"
+            IsSuccess = true,
+            From = f,
+            To = t,
+            Amount = amount,
+            Result = result,
+            Message = $"Elapsed {sw.Elapsed}"
         };
     }
 

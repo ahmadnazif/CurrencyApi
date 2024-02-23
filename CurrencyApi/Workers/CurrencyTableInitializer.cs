@@ -3,11 +3,10 @@ using System.Diagnostics;
 
 namespace CurrencyApi.Workers;
 
-public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, IDb db, OpenExchangeRatesApi api, CountryService country) : BackgroundService
+public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, IDb db, OpenExchangeRatesApi api) : BackgroundService
 {
     private readonly ILogger<CurrencyTableInitializer> logger = logger;
     private readonly IDb db = db;
-    private readonly CountryService country = country;
     private readonly OpenExchangeRatesApi api = api;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -21,27 +20,20 @@ public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, 
             var count = await db.CountAllCurrencyAsync(stoppingToken);
             sw1.Stop();
 
-            if (count == country.CountryCount)
+            if (count > 0)
             {
-                logger.LogInformation($"All currency data has already exist in 'currency' table [{sw1.Elapsed}]");
+                logger.LogInformation($"All {count} currency data has already exist in 'currency' table [{sw1.Elapsed}]");
             }
             else
             {
-                logger.LogWarning($"count: {count}, country count: {country.CountryCount}");
                 Stopwatch sw2 = Stopwatch.StartNew();
 
-                var data = country.ListAllCountry().Select(d => new Currency
-                {
-                    CountryCode = d.Iso,
-                    CountryName = d.Name,
-                    CurrencyCode = d.CurrencyCode?.ToString(),
-                    CurrencyName = string.IsNullOrWhiteSpace(d.CurrencyName) ? "Unknown" : d.CurrencyName
-                });
+                var currencies = await api.GetCurrenciesAsync(stoppingToken);
+                await db.InitializeCurrencyTableDataAsync(currencies.ToDictionary(), stoppingToken);
 
-                await db.InitializeCurrencyTableDataAsync(data.ToList(), stoppingToken);
                 sw2.Stop();
 
-                logger.LogInformation($"All currency data has been initialized [{sw2.Elapsed}]");
+                logger.LogInformation($"All currency data has been initialized with {currencies.Count} data [{sw2.Elapsed}]");
             }
         }
         catch (Exception ex)
@@ -50,8 +42,5 @@ public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, 
         }
     }
 
-    public override Task StopAsync(CancellationToken cancellationToken)
-    {
-        return base.StopAsync(cancellationToken);
-    }
+    public override Task StopAsync(CancellationToken cancellationToken) => base.StopAsync(cancellationToken);
 }
