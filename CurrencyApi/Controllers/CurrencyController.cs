@@ -25,7 +25,7 @@ public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBa
     }
 
     [HttpGet("get-latest-rate")]
-    public async Task<ActionResult<CurrencyRate>> GetLatestRate([FromQuery] string? currencyCode, CancellationToken ct)
+    public async Task<ActionResult<CurrencyRate>> GetLatestRate([FromQuery] string currencyCode, CancellationToken ct)
     {
         return await db.GetLatestRateAsync(currencyCode, ct);
     }
