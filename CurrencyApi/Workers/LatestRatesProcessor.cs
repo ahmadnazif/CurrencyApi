@@ -12,57 +12,63 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await Task.Delay(5000, stoppingToken);
+        await Task.Delay(3000, stoppingToken);
         logger.LogInformation($"Starting '{nameof(LatestRatesProcessor)}' worker..");
 
-        var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["OpenExchangeRates:LatestRatesRefreshMinute"]));
-        logger.LogInformation($"Rates refresh delay set to {rateRefreshdelay}");
+        var refreshTs = TimeSpan.FromMinutes(int.Parse(config["OpenExchangeRates:LatestRatesRefreshMinute"]));
+        logger.LogInformation($"Rates refresh delay set to {refreshTs}");
 
-        if (rateRefreshdelay.TotalMinutes < 30)
+        if (refreshTs.TotalMinutes < 30)
         {
-            rateRefreshdelay = new(0, 30, 0);
-            logger.LogInformation($"Rates refresh delay set to {rateRefreshdelay}");
+            refreshTs = new(0, 30, 0);
+            logger.LogInformation($"Rates refresh delay set to minimum {refreshTs}");
         }
 
         while (!stoppingToken.IsCancellationRequested)
         {
             logger.LogInformation($"Executing '{nameof(LatestRatesProcessor)}' worker..");
             Stopwatch sw = Stopwatch.StartNew();
+
             try
             {
                 var latestTimeStr = await db.GetSettingAsync(SettingId.LatestRatesRefreshTime, stoppingToken);
-                if (string.IsNullOrWhiteSpace(latestTimeStr))
+
+                // First refresh
+                if (string.IsNullOrWhiteSpace(latestTimeStr)) 
                 {
                     await ProcessAsync(stoppingToken);
                     sw.Stop();
 
-                    var nextRefreshTime = DateTime.Now.Add(rateRefreshdelay);
-                    logger.LogInformation($"Done. Next refresh at {nextRefreshTime} [{sw.Elapsed}]");
-                    await Task.Delay(rateRefreshdelay, stoppingToken);
+                    var nextRefreshTime = DateTime.Now.Add(refreshTs);
+                    logger.LogInformation($"Done. Next refresh at {nextRefreshTime.ToDbDateTimeString()} in {refreshTs} delay [{sw.Elapsed}]");
+                    await Task.Delay(refreshTs, stoppingToken);
                 }
+
+                // Subsequent refresh
                 else
                 {
-                    var time = DateTimeHelper.Parse(latestTimeStr, DateTimeFormat.DbDateTime);
-                    if (DateTime.Now.Subtract(time.Value) > rateRefreshdelay)
+                    var lastRefreshTime = DateTimeHelper.Parse(latestTimeStr, DateTimeFormat.DbDateTime);
+
+                    if (DateTime.Now.Subtract(lastRefreshTime.Value) > refreshTs)
                     {
                         await ProcessAsync(stoppingToken);
                         sw.Stop();
 
-                        var nextRefreshTime = DateTime.Now.Add(rateRefreshdelay);
-                        logger.LogInformation($"Done. Next refresh at {nextRefreshTime} [{sw.Elapsed}]");
+                        var nextRefreshTime = DateTime.Now.Add(refreshTs);
+                        logger.LogInformation($"Done. Next refresh at {nextRefreshTime.ToDbDateTimeString()} in {refreshTs} delay [{sw.Elapsed}]");
+                        await Task.Delay(refreshTs, stoppingToken);
                     }
                     else
                     {
                         sw.Stop();
-                        var nextRefreshTime = time.Value.Add(rateRefreshdelay);
-                        logger.LogInformation($"Refresh not needed. Next refresh at {nextRefreshTime.ToDbDateTimeString()} [{sw.Elapsed}]");
 
-                        //
-                        //var curr = DateTime.Now.Subtract(rateRefreshdelay);
-                        //rateRefreshdelay = new()
+                        var nextRefreshTime = lastRefreshTime.Value.Add(refreshTs);
+                        logger.LogInformation($"Refresh not needed. Next refresh at {nextRefreshTime.ToDbDateTimeString()} in {refreshTs} delay [{sw.Elapsed}]");
+
+                        var newRefreshTs = nextRefreshTime.Subtract(DateTime.Now);
+                        logger.LogInformation($"NEW Refresh TS: {newRefreshTs}"); // TODO: delete
+                        await Task.Delay(newRefreshTs, stoppingToken);
                     }
-
-                    await Task.Delay(rateRefreshdelay, stoppingToken);
                 }
             }
             catch (TaskCanceledException)
@@ -75,9 +81,9 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
                 sw.Stop();
                 logger.LogError(ex.Message);
 
-                var nextRefreshTime = DateTime.Now.Add(rateRefreshdelay);
+                var nextRefreshTime = DateTime.Now.Add(refreshTs);
                 logger.LogInformation($"Error occured. Will refresh again at {nextRefreshTime} [{sw.Elapsed}]");
-                await Task.Delay(rateRefreshdelay, stoppingToken);
+                await Task.Delay(refreshTs, stoppingToken);
             }
         }
     }
@@ -106,7 +112,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         await db.SaveSettingAsync(SettingId.LatestRatesRefreshTime, DateTime.Now.ToDbDateTimeString(), ct);
 
         sw.Stop();
-        logger.LogInformation($"Refresh finised [{sw.Elapsed}]");
+        logger.LogInformation($"Refresh success [{sw.Elapsed}]");
     }
 
     private async Task Process2Async(CancellationToken ct)
