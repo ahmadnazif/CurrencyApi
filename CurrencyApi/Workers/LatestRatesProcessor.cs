@@ -61,7 +61,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
                     await Task.Delay(rateRefreshdelay, stoppingToken);
                 }
             }
-            catch(TaskCanceledException)
+            catch (TaskCanceledException)
             {
                 sw.Stop();
                 logger.LogInformation("Worker is stopped");
@@ -98,6 +98,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         });
 
         await db.RefreshLatestRateAsync(rates.ToList(), ct);
+        await db.AddRateHistoryAsync(raw.Rates.ToDictionary(x => x.Key, y => y.Value), ct);
         await db.SaveSettingAsync(SettingId.LatestRatesRefreshTime, DateTime.Now.ToDbDateTimeString(), ct);
 
         sw.Stop();

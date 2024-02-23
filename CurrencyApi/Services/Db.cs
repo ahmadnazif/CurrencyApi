@@ -99,6 +99,29 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
         }
     }
 
+    /// <summary>
+    /// Already handled if value is NULL or empty or whitespace
+    /// </summary>
+    /// <typeparam name="T1"></typeparam>
+    /// <typeparam name="T2"></typeparam>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    private static Dictionary<T1, T2> DeserializeDict<T1, T2>(string value)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return [];
+
+            var result = JsonSerializer.Deserialize<Dictionary<T1, T2>>(value);
+            return result ?? [];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
     private static List<T> DeserializeList<T>(string value)
     {
         try
@@ -118,6 +141,7 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
     }
     #endregion
 
+    #region Currency
     public async Task<int> CountAllCurrencyAsync(CancellationToken ct)
     {
         try
@@ -220,7 +244,9 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
             return [];
         }
     }
+    #endregion
 
+    #region Latest rates
     public async Task<List<CurrencyRate>> ListAllLatestRateAsync(CancellationToken ct)
     {
         try
@@ -328,8 +354,77 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
             };
         }
     }
+    #endregion
+
+    #region Rates history
+    public async Task<List<RateHistory>> ListAllRateHistoryAsync(DateOnly date, CancellationToken ct)
+    {
+        try
+        {
+            List<RateHistory> data = [];
+            string sql = $"SELECT * FROM rate_history WHERE created_time >= '{date.ToDbDateTimeString()}' AND created_time < '{date.AddDays(1).ToDbDateTimeString()}';";
+
+            using (MySqlConnection connection = new(this.dbConString))
+            {
+                await connection.OpenAsync(ct);
+                using MySqlCommand cmd = new(sql, connection);
+                using var reader = await cmd.ExecuteReaderAsync(ct);
+                while (await reader.ReadAsync(ct))
+                {
+                    data.Add(new()
+                    {
+                        Time = GetDateTimeValue(reader["created_time"]).Value,
+                        Rates = DeserializeDict<string, decimal>(GetStringValue(reader["data"]))
+                    });
+                }
+            }
+
+            return data;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return [];
+        }
+    }
+
+    public async Task<PostResponse> AddRateHistoryAsync(Dictionary<string, decimal> data, CancellationToken ct)
+    {
+        try
+        {
+            PostResponse resp = new() { IsSuccess = false };
+            string query =
+                "INSERT INTO rate_history (data) VALUES (@a);";
+
+            using (MySqlConnection connection = new(this.dbConString))
+            {
+                await connection.OpenAsync(ct);
+                using MySqlCommand cmd = new(query, connection);
+                cmd.Parameters.AddWithValue("@a", JsonSerializer.Serialize(data));
+
+                await cmd.ExecuteNonQueryAsync(ct);
+                resp = new PostResponse
+                {
+                    IsSuccess = true
+                };
+            }
+
+            return resp;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return new PostResponse
+            {
+                IsSuccess = false,
+                Message = ex.Message
+            };
+        }
+    }
 
 
+    #endregion
+    #region Setting
     public async Task<PostResponse> SaveSettingAsync(SettingId id, string value, CancellationToken ct)
     {
         try
@@ -393,4 +488,5 @@ public class Db(ILogger<Db> logger, IConfiguration config) : IDb
             return null;
         }
     }
+    #endregion
 }

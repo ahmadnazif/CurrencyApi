@@ -29,6 +29,17 @@ public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBa
         return await db.GetLatestRateAsync(currencyCode, ct);
     }
 
+    [HttpGet("list-all-rate-history")]
+    public async Task<ActionResult<List<RateHistory>>> ListAllRateHistory([FromQuery] string date, CancellationToken ct)
+    {
+        var d = DateOnlyHelper.Parse(date, DateTimeFormat.DbDate);
+
+        if (!d.HasValue)
+            return new List<RateHistory>();
+
+        return await db.ListAllRateHistoryAsync(d.Value, ct);
+    }
+
     [HttpGet("convert")]
     public async Task<ActionResult<decimal>> Convert([FromQuery] string? from, [FromQuery] string? to, decimal amount, CancellationToken ct)
     {

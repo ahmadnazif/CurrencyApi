@@ -26,7 +26,7 @@ public class CurrencyTableInitializer(ILogger<CurrencyTableInitializer> logger, 
             }
             else
             {
-                logger.LogError($"count: {count}, country count: {country.CountryCount}");
+                logger.LogWarning($"count: {count}, country count: {country.CountryCount}");
                 Stopwatch sw2 = Stopwatch.StartNew();
 
                 var data = country.ListAllCountry().Select(d => new Currency
