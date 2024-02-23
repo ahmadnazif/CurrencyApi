@@ -43,16 +43,16 @@ public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBa
     [HttpGet("convert")]
     public async Task<ActionResult<decimal>> Convert([FromQuery] string? from, [FromQuery] string? to, decimal amount, CancellationToken ct)
     {
-        var a = await db.GetLatestRateAsync(from, ct);
-        var b = await db.GetLatestRateAsync(to, ct);
+        var f = await db.GetLatestRateAsync(from, ct);
+        var t = await db.GetLatestRateAsync(to, ct);
 
-        if (a == null)
+        if (f == null)
             return 0;
 
-        if (b == null)
+        if (t == null)
             return 0;
 
-        var result = b.Rate / a.Rate * amount;
+        var result = t.Rate / f.Rate * amount;
         return result;
     }
 

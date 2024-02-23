@@ -15,7 +15,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         await Task.Delay(5000, stoppingToken);
         logger.LogInformation($"Starting '{nameof(LatestRatesProcessor)}' worker..");
 
-        var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["LatestRatesRefreshDelayMinute"]));
+        var rateRefreshdelay = TimeSpan.FromMinutes(int.Parse(config["OpenExhangeRates:LatestRatesRefreshMinute"]));
         logger.LogInformation($"Rates refresh delay set to {rateRefreshdelay}");
 
         if (rateRefreshdelay.TotalMinutes < 30)
@@ -85,7 +85,7 @@ public class LatestRatesProcessor(ILogger<LatestRatesProcessor> logger, IDb db, 
         if (raw == null)
         {
             sw.Stop();
-            logger.LogInformation($"Can't process. No data returned from API [{sw.Elapsed}]");
+            logger.LogInformation($"Can't process. No data returned from API. Please check API error log [{sw.Elapsed}]");
             return;
         }
 

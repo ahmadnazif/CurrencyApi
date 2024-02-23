@@ -14,7 +14,7 @@ public class OpenExchangeRatesApi
         this.logger = logger;
         httpClient.DefaultRequestHeaders.Accept.Clear();
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", config["OpenExchangeRatesAppId"]);
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", config["OpenExchangeRates:AppId"]);
         this.httpClient = httpClient;
     }
 
@@ -34,7 +34,7 @@ public class OpenExchangeRatesApi
         }
         catch(Exception ex)
         {
-            logger.LogError(ex.Message);
+            logger.LogError($"Exception: {ex.Message}");
             return null;
         }
     }
