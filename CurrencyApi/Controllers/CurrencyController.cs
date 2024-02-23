@@ -1,6 +1,7 @@
 ﻿using CurrencyApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 
 namespace CurrencyApi.Controllers;
 
@@ -41,19 +42,31 @@ public class CurrencyController(IDb db, OpenExchangeRatesApi api) : ControllerBa
     }
 
     [HttpGet("convert")]
-    public async Task<ActionResult<decimal>> Convert([FromQuery] string? from, [FromQuery] string? to, decimal amount, CancellationToken ct)
+    public async Task<ActionResult<CurrencyConversionResponse>> Convert([FromQuery] string from, [FromQuery] string to, decimal amount, CancellationToken ct)
     {
+        Stopwatch sw = Stopwatch.StartNew();
+
         var f = await db.GetLatestRateAsync(from, ct);
         var t = await db.GetLatestRateAsync(to, ct);
 
         if (f == null)
-            return 0;
+            return new CurrencyConversionResponse { IsSuccess = false, Message = $"No rate data for currency '{from}'"};
 
         if (t == null)
-            return 0;
+            return new CurrencyConversionResponse { IsSuccess = false, Message = $"No rate data for currency '{to}'" };
 
         var result = t.Rate / f.Rate * amount;
-        return result;
+        sw.Stop();
+
+        return new CurrencyConversionResponse
+        {
+             IsSuccess = true,
+             From = f,
+             To = t,
+             Amount = amount,
+             Result = result,
+             Message = $"Elapsed {sw.Elapsed}"
+        };
     }
 
 
