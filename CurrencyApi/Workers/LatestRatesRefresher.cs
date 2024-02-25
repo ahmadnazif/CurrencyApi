@@ -44,7 +44,7 @@ public class LatestRatesRefresher(ILogger<LatestRatesRefresher> logger, CacheSer
                     sw.Stop();
 
                     var nextRefreshTime = DateTime.Now.Add(refreshTs);
-                    logger.LogInformation($"Done. Next refresh at {nextRefreshTime.ToDbDateTimeString()} in {refreshTs} delay [{sw.Elapsed}]");
+                    logger.LogInformation($"Done. Next refresh at {nextRefreshTime.ToDbDateTimeString()} ({refreshTs} delay) [{sw.Elapsed}]");
                     await Task.Delay(refreshTs, stoppingToken);
                 }
 
@@ -59,7 +59,7 @@ public class LatestRatesRefresher(ILogger<LatestRatesRefresher> logger, CacheSer
                         sw.Stop();
 
                         var nextRefreshTime = DateTime.Now.Add(refreshTs);
-                        logger.LogInformation($"Done. Next refresh at {nextRefreshTime.ToDbDateTimeString()} in {refreshTs} delay [{sw.Elapsed}]");
+                        logger.LogInformation($"Done. Next refresh at {nextRefreshTime.ToDbDateTimeString()} ({refreshTs} delay) [{sw.Elapsed}]");
                         await Task.Delay(refreshTs, stoppingToken);
                     }
                     else
@@ -67,10 +67,10 @@ public class LatestRatesRefresher(ILogger<LatestRatesRefresher> logger, CacheSer
                         sw.Stop();
 
                         var nextRefreshTime = lastRefreshTime.Value.Add(refreshTs);
-                        logger.LogInformation($"Refresh not needed. Next refresh at {nextRefreshTime.ToDbDateTimeString()} in {refreshTs} delay [{sw.Elapsed}]");
+                        logger.LogInformation($"Refresh not needed. Next refresh at {nextRefreshTime.ToDbDateTimeString()} ({refreshTs} delay) [{sw.Elapsed}]");
 
                         var newRefreshTs = nextRefreshTime.Subtract(DateTime.Now);
-                        logger.LogInformation($"Next refresh will begin in {newRefreshTs}"); // TODO: delete
+                        logger.LogInformation($"Next refresh will begin in {newRefreshTs}");
                         await Task.Delay(newRefreshTs, stoppingToken);
                     }
                 }

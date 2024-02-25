@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CurrencyApi.Controllers;
 
@@ -38,6 +39,23 @@ public class CurrencyController(IDb db, CacheService cache) : ControllerBase
             return new List<CurrencyRateHistory>();
 
         return await db.ListAllRateHistoryAsync(d.Value, ct);
+    }
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [HttpGet("list-all-rate-history-for-currency")]
+    public async Task<ActionResult<List<CurrencyRateHistory>>> ListAllRateHistoryForCurrency([FromQuery] string currencyCode, [FromQuery] string? fromDate, [FromQuery] string? toDate, CancellationToken ct)
+    {
+        throw new NotImplementedException("todo");
+
+        //var f = DateOnlyHelper.Parse(fromDate, DateTimeFormat.DbDate);
+        //var t = DateOnlyHelper.Parse(toDate, DateTimeFormat.DbDate);
+
+        //if(f.HasValue && t.HasValue)
+        //{
+        //    var rawFromData = await db.ListAllRateHistoryAsync(f.Value, ct);
+        //}
+
+        //return new List<CurrencyRateHistory>();
     }
 
     [HttpGet("convert")]
