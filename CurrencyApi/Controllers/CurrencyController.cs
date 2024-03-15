@@ -6,7 +6,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CurrencyApi.Controllers;
 
-[Route("api/currency")]
+[Route(BASE_ROUTE)]
 [ApiController]
 public class CurrencyController(IDb db, CacheService cache) : ControllerBase
 {
